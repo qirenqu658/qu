@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>许哥变形记 · 化蛆成蝶</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            background: #0b1a2f;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+            padding: 8px;
+        }
+        .game-container {
+            width: 100%;
+            max-width: 520px;
+            background: #142b3c;
+            border-radius: 32px;
+            box-shadow: 0 20px 30px rgba(0,0,0,0.6);
+            padding: 16px 12px 20px;
+            border: 2px solid #f5c542;
+        }
+        .score-panel {
+            background: #1d3e53;
+            border-radius: 60px;
+            padding: 12px 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #ffecbb;
+            font-weight: bold;
+            font-size: 1.2rem;
+            text-shadow: 2px 2px 0 #0f2835;
+            border: 2px solid #eba031;
+            margin-bottom: 12px;
+            box-shadow: inset 0 -3px 0 #0e2a33;
+        }
+        .timer-box, .score-box {
+            background: #0f2a31;
+            padding: 8px 18px;
+            border-radius: 40px;
+            border: 1px solid #f8c150;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            backdrop-filter: blur(2px);
+        }
+        .timer-box span, .score-box span {
+            color: #fee7a0;
+            margin-right: 5px;
+        }
+        #timer, #score {
+            color: #faf1c7;
+            font-size: 1.6rem;
+            line-height: 1;
+            min-width: 55px;
+            text-align: center;
+        }
+        #score {
+            color: #d4ffb0;
+        }
+        .canvas-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1/1;
+            background: #14212b;
+            border-radius: 40px;
+            border: 4px solid #dba642;
+            overflow: hidden;
+            box-shadow: inset 0 0 0 2px #f3d37c, 0 10px 15px rgba(0, 0, 0, 0.5);
+            touch-action: none;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background: #183a47;
+            background-image: radial-gradient(circle at 30% 40%, #2c5f72 2px, transparent 2px), 
+                              radial-gradient(circle at 70% 85%, #2c5f72 1px, transparent 2px);
+            background-size: 40px 40px;
+            cursor: none;
+        }
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: 12px 0 10px;
+            background: #1e3d49;
+            padding: 8px 15px;
+            border-radius: 50px;
+            border: 1px solid #ebbc6a;
+            width: fit-content;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .morph-tag {
+            background: #263f4b;
+            color: #ffd966;
+            font-weight: bold;
+            font-size: 1.1rem;
+            padding: 4px 12px;
+            border-radius: 40px;
+            border: 1px solid #fad473;
+        }
+        #morph-name {
+            color: #fff1b5;
+            min-width: 90px;
+            text-align: center;
+        }
+        .btn-restart {
+            background: #fec542;
+            border: none;
+            border-radius: 40px;
+            padding: 14px 20px;
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: #1d3e48;
+            letter-spacing: 2px;
+            box-shadow: 0 8px 0 #b57c1a, 0 10px 15px rgba(0,0,0,0.3);
+            width: 100%;
+            transition: 0.07s;
+            margin-top: 16px;
+            border: 2px solid #ffdf91;
+            text-transform: uppercase;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+        .btn-restart:active {
+            transform: translateY(6px);
+            box-shadow: 0 2px 0 #b57c1a, 0 8px 12px rgba(0,0,0,0.3);
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+            backdrop-filter: blur(4px);
+            transition: 0.2s;
+        }
+        .modal-content {
+            background: #ffeac2;
+            max-width: 400px;
+            width: 85%;
+            padding: 25px 20px;
+            border-radius: 70px 20px 70px 20px;
+            border: 5px solid #fb9c2e;
+            text-align: center;
+            color: #1b4b5e;
+            box-shadow: 0 15px 0 #a56118, 0 20px 30px black;
+        }
+        .start-title {
+            font-size: 2.8rem;
+            font-weight: 900;
+            color: #ffd966;
+            text-shadow: 4px 4px 0 #aa6d2b;
+            margin-bottom: 15px;
+            letter-spacing: 4px;
+        }
+        .start-sub {
+            font-size: 1.2rem;
+            margin: 20px 0 30px;
+            color: #2f5e70;
+        }
+        .btn-start, .btn-again {
+            background: #fcb42e;
+            border: none;
+            border-radius: 60px;
+            padding: 16px 35px;
+            font-size: 2rem;
+            font-weight: 900;
+            color: #172d36;
+            border-bottom: 6px solid #9f6919;
+            width: 100%;
+            max-width: 260px;
+            margin: 10px auto;
+            cursor: pointer;
+            transition: 0.06s;
+            box-shadow: 0 8px 0 #8f5917;
+            border: 2px solid #ffd58c;
+        }
+        .btn-start:active, .btn-again:active {
+            transform: translateY(6px);
+            box-shadow: 0 2px 0 #8f5917;
+        }
+        .ending-img-container {
+            display: flex;
+            justify-content: center;
+            margin: 15px 0;
+            min-height: 130px;
+        }
+        .ending-img {
+            max-width: 220px;
+            max-height: 140px;
+            border-radius: 30px;
+            border: 4px solid #f1c40f;
+            background: #203e49;
+            object-fit: contain;
+        }
+        .hidden {
+            display: none !important;
+        }
+        .footer-tip {
+            color: #bbaa7f;
+            text-align: center;
+            margin-top: 8px;
+            font-size: 0.8rem;
+        }
+        /* 公告滚动区域样式 */
+        .announcement-box {
+            max-height: 250px;
+            overflow-y: auto;
+            text-align: left;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            padding: 12px;
+            background: #fff3d6;
+            border-radius: 16px;
+            border: 1px solid #d4a76a;
+            color: #2d3e4b;
+            white-space: pre-wrap;
+            word-break: break-word;
+            margin: 10px 0;
+        }
+        /* 负分结局标题样式 */
+        .ending-title {
+            font-size: 2rem;
+            font-weight: 900;
+            color: #c0392b;
+            text-shadow: 2px 2px 0 #ffe28a;
+            margin-bottom: 15px;
+            line-height: 1.2;
+        }
+    </style>
+</head>
+<body>
+<div class="game-container">
+    <div class="score-panel">
+        <div class="timer-box"><span>⏳</span><span id="timer">30</span></div>
+        <div class="score-box"><span>🎯熟练</span><span id="score">0</span></div>
+    </div>
+    <div class="canvas-wrapper" id="canvasWrapper">
+        <canvas id="gameCanvas" width="600" height="600"></canvas>
+    </div>
+    <div class="status-indicator">
+        <span class="morph-tag">🐛 形态</span>
+        <span id="morph-name">许哥是蛆</span>
+    </div>
+    <button class="btn-restart" id="restartBtn">🔄 重开蛆蝶局</button>
+    <div class="footer-tip">← 拖动/滑动 捏捏 →  |  赛训🟢 +5 练习🔵 +3 摸鱼🟠 -5 摆烂🔴 -10</div>
+</div>
+
+<!-- 开始界面 -->
+<div id="startModal" class="modal-overlay">
+    <div class="modal-content" style="background: #ffe5a3;">
+        <div class="start-title">🐛 许哥变形记 🦋</div>
+        <div class="start-sub">操控「捏捏」接住训练成果<br>化蛆成蝶 or 原地开除？</div>
+        <div style="display: flex; flex-direction: column; align-items: center;">
+            <button class="btn-start" id="startGameBtn">🔛 开始</button>
+        </div>
+        <div style="margin-top: 20px; font-size: 1rem; color: #5a3e1b;">图片素材可替换 (蛆/苍蝇/蝴蝶结局)</div>
+    </div>
+</div>
+
+<!-- 结局/公告弹窗 -->
+<div id="endModal" class="modal-overlay hidden">
+    <div class="modal-content" style="padding: 20px 15px;">
+        <!-- 结局图片区域（仅分数结局显示） -->
+        <div class="ending-img-container" id="endingImgContainer">
+            <img id="imgMaggot" class="ending-img hidden" src="images/xuge-maggot-end.png" alt="许哥是蛆结局">
+            <img id="imgFly" class="ending-img hidden" src="images/xuge-fly-end.png" alt="许哥变苍蝇结局">
+            <img id="imgButterfly" class="ending-img hidden" src="images/xuge-butterfly-end.png" alt="许哥化蛆成蝶结局">
+        </div>
+        <!-- 负分结局专用标题（默认隐藏） -->
+        <div id="endingTitle" class="ending-title hidden"></div>
+        <!-- 结局文字/公告内容 -->
+        <div id="endingMessage" style="font-size: 1.8rem; font-weight: bold; margin: 10px 0; color: #1d4e5f;"></div>
+        <button class="btn-again" id="againBtn">🎮 再来一局</button>
+        <small style="display: block; margin-top: 12px; color: #735e36;">点击按钮重新开始</small>
+    </div>
+</div>
+
+<script>
+(function() {
+    // ==================== 用户准备图片区 ====================
+    const IMAGE_PATHS = {
+        // 角色形态 (游戏内)
+        maggot: 'images/xuge-maggot.png',
+        pupa: 'images/xuge-pupa.png',
+        fly: 'images/xuge-fly.png',
+        butterfly: 'images/xuge-butterfly.png',
+        // 结局图 (弹窗显示)
+        endingMaggot: 'images/xuge-maggot-end.png',
+        endingFly: 'images/xuge-fly-end.png',
+        endingButterfly: 'images/xuge-butterfly-end.png'
+    };
+    // ====================================================
+
+    // 音频路径 (使用正斜杠)
+    const AUDIO_PATHS = {
+        bgm: 'audio/bgm.mp3',
+        good: 'audio/good.wav',
+        bad: 'audio/bad.wav',
+        goodEnd: 'audio/good-end.wav',
+        badEnd: 'audio/bad-end.wav'
+    };
+
+    // 初始化音频对象
+    const bgmAudio = new Audio(AUDIO_PATHS.bgm);
+    bgmAudio.loop = true;
+    const goodSound = new Audio(AUDIO_PATHS.good);
+    const badSound = new Audio(AUDIO_PATHS.bad);
+    const goodEndSound = new Audio(AUDIO_PATHS.goodEnd);
+    const badEndSound = new Audio(AUDIO_PATHS.badEnd);
+
+    // 辅助函数：播放音效（自动处理错误）
+    function playSound(audio) {
+        audio.currentTime = 0;
+        audio.play().catch(e => console.log('音频播放失败（可能是未加载或浏览器限制）:', e));
+    }
+
+    // 停止背景音乐（用于切换）
+    function stopBGM() {
+        bgmAudio.pause();
+        bgmAudio.currentTime = 0;
+    }
+
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const wrapper = document.getElementById('canvasWrapper');
+    const timerSpan = document.getElementById('timer');
+    const scoreSpan = document.getElementById('score');
+    const morphNameSpan = document.getElementById('morph-name');
+    const restartBtn = document.getElementById('restartBtn');
+    
+    const startModal = document.getElementById('startModal');
+    const endModal = document.getElementById('endModal');
+    const startGameBtn = document.getElementById('startGameBtn');
+    const againBtn = document.getElementById('againBtn');
+    const imgMaggot = document.getElementById('imgMaggot');
+    const imgFly = document.getElementById('imgFly');
+    const imgButterfly = document.getElementById('imgButterfly');
+    const endingMessage = document.getElementById('endingMessage');
+    const endingTitle = document.getElementById('endingTitle');
+    const endingImgContainer = document.getElementById('endingImgContainer');
+
+    const CW = 600, CH = 600;
+    canvas.width = CW; canvas.height = CH;
+
+    // 游戏参数
+    const PLAYER_WIDTH = 80;
+    const PLAYER_HEIGHT = 80;
+    const PLAYER_COLLIDE_W = 70;
+    const PLAYER_COLLIDE_H = 70;
+    const PLAYER_FIXED_Y = CH - 110;
+
+    const DROP_WIDTH = 80;
+    const DROP_HEIGHT = 42;
+    const DROP_SPEED = 1.5;
+    const DROP_TYPES = [
+        { text: '赛训', color: '#2ecc71', score: 5 },
+        { text: '练习', color: '#3498db', score: 3 },
+        { text: '摸鱼', color: '#f39c12', score: -5 },
+        { text: '摆烂', color: '#e74c3c', score: -10 }
+    ];
+
+    // 全局变量
+    let playerX = (CW - PLAYER_WIDTH) / 2;
+    let drops = [];
+    let score = 0;
+    let timeLeft = 30;
+    let gameActive = false;
+    let gameEnded = false;
+    let animFrame = null;
+    let timerInterval = null;
+
+    // 图片资源 (角色)
+    const images = {
+        maggot: new Image(),
+        pupa: new Image(),
+        fly: new Image(),
+        butterfly: new Image()
+    };
+    images.maggot.src = IMAGE_PATHS.maggot;
+    images.pupa.src = IMAGE_PATHS.pupa;
+    images.fly.src = IMAGE_PATHS.fly;
+    images.butterfly.src = IMAGE_PATHS.butterfly;
+
+    // 结局图片
+    imgMaggot.src = IMAGE_PATHS.endingMaggot;
+    imgFly.src = IMAGE_PATHS.endingFly;
+    imgButterfly.src = IMAGE_PATHS.endingButterfly;
+
+    function getCurrentMorph() {
+        if (score < 0) return 'maggot';
+        if (score <= 10) return 'maggot';
+        else if (score <= 20) return 'pupa';
+        else if (score <= 35) return 'fly';
+        else return 'butterfly';
+    }
+
+    function updateMorphName() {
+        const morph = getCurrentMorph();
+        const names = {
+            maggot: '🐛 许哥是蛆',
+            pupa: '🪴 许哥是蛹',
+            fly: '🪰 许哥变苍蝇',
+            butterfly: '🦋 许哥化蛆成蝶'
+        };
+        morphNameSpan.innerText = names[morph] || '许哥是蛆';
+    }
+
+    // 重置游戏
+    function resetGame() {
+        if (timerInterval) clearInterval(timerInterval);
+        if (animFrame) cancelAnimationFrame(animFrame);
+        
+        gameActive = true;
+        gameEnded = false;
+        drops = [];
+        score = 0;
+        timeLeft = 30;
+        playerX = (CW - PLAYER_WIDTH) / 2;
+        
+        updateScoreDisplay();
+        timerSpan.innerText = timeLeft;
+        updateMorphName();
+        
+        startModal.classList.add('hidden');
+        endModal.classList.add('hidden');
+        
+        // 重新播放背景音乐
+        stopBGM();
+        playSound(bgmAudio);
+        
+        timerInterval = setInterval(function() {
+            if (!gameActive || gameEnded) return;
+            timeLeft -= 1;
+            timerSpan.innerText = timeLeft >= 0 ? timeLeft : 0;
+            if (timeLeft <= 0) {
+                gameActive = false;
+                gameEnded = true;
+                clearInterval(timerInterval);
+                timerInterval = null;
+                showEndingByScore();
+            }
+        }, 1000);
+
+        function gameLoop() {
+            if (gameActive) {
+                updateDrops();
+                checkCollisions();
+            }
+            drawCanvas();
+            animFrame = requestAnimationFrame(gameLoop);
+        }
+        animFrame = requestAnimationFrame(gameLoop);
+    }
+
+    // 显示结局弹窗（分数结局）
+    function showEndingByScore() {
+        if (gameEnded && endModal.classList.contains('hidden') === false) return;
+        
+        gameActive = false;
+        gameEnded = true;
+        
+        // 停止背景音乐
+        stopBGM();
+        
+        // 隐藏负分标题，显示图片容器
+        endingTitle.classList.add('hidden');
+        endingImgContainer.classList.remove('hidden');
+        
+        imgMaggot.classList.add('hidden');
+        imgFly.classList.add('hidden');
+        imgButterfly.classList.add('hidden');
+
+        let mainMsg = '';
+        if (score >= 40) {
+            imgButterfly.classList.remove('hidden');
+            mainMsg = '🦋 化蛆成蝶! 许哥世冠!';
+            playSound(goodEndSound);
+        } else if (score > 20) {
+            imgFly.classList.remove('hidden');
+            mainMsg = '🪰 许哥变苍蝇: 有点菜但能飞';
+            playSound(badEndSound);
+        } else {
+            imgMaggot.classList.remove('hidden');
+            mainMsg = '🐛 许哥是蛆: 爬不起来了';
+            playSound(badEndSound);
+        }
+
+        endingMessage.innerHTML = mainMsg;
+        endModal.classList.remove('hidden');
+    }
+
+    // 开除许哥公告（负分触发）
+    function showDissolveAnnounce() {
+        if (gameEnded) return;
+        gameActive = false;
+        gameEnded = true;
+        if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+        
+        // 停止背景音乐
+        stopBGM();
+
+        // 显示标题，隐藏图片容器
+        endingTitle.classList.remove('hidden');
+        endingImgContainer.classList.add('hidden');
+        
+        // 完整公告文本（保留原始格式）
+        const fullAnnouncement = `"WBG电子竞技俱乐部公告
+
+2026年3月13日晚，结束决赛赛事后，对于监管者许立(ID:WBG.nle)比赛中的反常表现，开启了违反赛事公平性行为的调查，并且向联盟通报该情况。
+
+通过俱乐部调查取证发现捏捏疑似存在严重违反俱乐部规章制度及职业操守、影响赛事公平性的不正当行为。俱乐部将目前已掌握的情况上报联盟，移交联盟纪律部门调查处理。联盟纪律团队已介入调查，我们将结合联盟调查结果对该事件进行严肃处理。
+
+我俱乐部始终坚守公平竞技底线，坚决抵制影响赛事公平性等一切违规行为，对内部违规行为从严从重处理。感谢粉丝、合作伙伴及社会各界的监督，俱乐部将以此为戒，坚守职业初心，打造合规、健康、正向的电竞团队。"`;
+
+        // 提取标题和正文（去掉第一行和多余引号）
+        const lines = fullAnnouncement.split('\n');
+        const titleText = lines[0].replace(/"/g, ''); // "WBG电子竞技俱乐部公告" -> WBG电子竞技俱乐部公告
+        // 正文从第三行开始（跳过第一行和空行）
+        const bodyLines = lines.slice(2);
+        const bodyText = bodyLines.join('\n').replace(/"$/, ''); // 去掉末尾可能存在的引号
+
+        endingTitle.innerText = titleText;
+        // 放入带滚动框的容器中
+        endingMessage.innerHTML = `<div class="announcement-box">${bodyText.replace(/\n/g, '<br>')}</div>`;
+
+        // 播放坏结局音效
+        playSound(badEndSound);
+
+        endModal.classList.remove('hidden');
+    }
+
+    function updateScoreDisplay() {
+        scoreSpan.innerText = score;
+        if (score < 0 && gameActive && !gameEnded) {
+            showDissolveAnnounce();
+        }
+        updateMorphName();
+    }
+
+    function addScore(delta) {
+        if (!gameActive || gameEnded) return;
+        score += delta;
+        // 播放得分/扣分音效
+        if (delta > 0) {
+            playSound(goodSound);
+        } else if (delta < 0) {
+            playSound(badSound);
+        }
+        updateScoreDisplay();
+    }
+
+    function updateDrops() {
+        if (Math.random() < 0.025) {
+            const typeIdx = Math.floor(Math.random() * DROP_TYPES.length);
+            const type = DROP_TYPES[typeIdx];
+            const x = Math.random() * (CW - DROP_WIDTH);
+            drops.push({
+                x: x,
+                y: -DROP_HEIGHT,
+                type: type,
+                width: DROP_WIDTH,
+                height: DROP_HEIGHT
+            });
+        }
+        for (let i = drops.length - 1; i >= 0; i--) {
+            drops[i].y += DROP_SPEED;
+            if (drops[i].y > CH) {
+                drops.splice(i, 1);
+            }
+        }
+    }
+
+    function checkCollisions() {
+        const playerRect = {
+            x: playerX + (PLAYER_WIDTH - PLAYER_COLLIDE_W) / 2,
+            y: PLAYER_FIXED_Y + (PLAYER_HEIGHT - PLAYER_COLLIDE_H) / 2,
+            w: PLAYER_COLLIDE_W,
+            h: PLAYER_COLLIDE_H
+        };
+        for (let i = drops.length - 1; i >= 0; i--) {
+            const d = drops[i];
+            const dropRect = { x: d.x, y: d.y, w: d.width, h: d.height };
+            if (rectCollide(playerRect, dropRect)) {
+                addScore(d.type.score);
+                drops.splice(i, 1);
+            }
+        }
+    }
+
+    function rectCollide(r1, r2) {
+        return !(r2.x > r1.x + r1.w ||
+            r2.x + r2.w < r1.x ||
+            r2.y > r1.y + r1.h ||
+            r2.y + r2.h < r1.y);
+    }
+
+    function drawCanvas() {
+        ctx.clearRect(0, 0, CW, CH);
+        ctx.strokeStyle = '#327088';
+        ctx.lineWidth = 0.5;
+        for (let i = 0; i < CW; i += 40) {
+            ctx.beginPath();
+            ctx.strokeStyle = '#2f5e72';
+            ctx.moveTo(i, 0);
+            ctx.lineTo(i, CH);
+            ctx.stroke();
+        }
+        for (let i = 0; i < CH; i += 40) {
+            ctx.beginPath();
+            ctx.strokeStyle = '#2f5e72';
+            ctx.moveTo(0, i);
+            ctx.lineTo(CW, i);
+            ctx.stroke();
+        }
+
+        for (let d of drops) {
+            ctx.fillStyle = d.type.color;
+            ctx.shadowColor = 'rgba(0,0,0,0.5)';
+            ctx.shadowBlur = 8;
+            ctx.shadowOffsetY = 3;
+            ctx.beginPath();
+            ctx.roundRect(d.x, d.y, DROP_WIDTH, DROP_HEIGHT, 16);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetY = 0;
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.font = 'bold 24px "Segoe UI", "Helvetica Neue", sans-serif';
+            ctx.fillStyle = '#1a1d23';
+            ctx.shadowColor = 'transparent';
+            ctx.fillText(d.type.text, d.x + 10, d.y + 32);
+        }
+
+        const morph = getCurrentMorph();
+        let img = images[morph];
+        if (img && img.complete && img.naturalWidth > 0) {
+            ctx.drawImage(img, playerX, PLAYER_FIXED_Y, PLAYER_WIDTH, PLAYER_HEIGHT);
+        } else {
+            ctx.fillStyle = '#d99b4c';
+            ctx.shadowBlur = 12;
+            ctx.shadowColor = '#402d1a';
+            ctx.beginPath();
+            ctx.roundRect(playerX, PLAYER_FIXED_Y, PLAYER_WIDTH, PLAYER_HEIGHT, 30);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            ctx.strokeStyle = '#feda7a';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            ctx.font = 'bold 24px sans-serif';
+            ctx.fillStyle = 'white';
+            ctx.fillText(morph === 'maggot' ? '🐛' : morph === 'pupa' ? '🪴' : morph === 'fly' ? '🪰' : '🦋', playerX+20, PLAYER_FIXED_Y+55);
+        }
+
+        ctx.font = '18px monospace';
+        ctx.fillStyle = '#e5f2c4';
+        ctx.shadowBlur = 4;
+        ctx.shadowColor = '#1e4c5c';
+        ctx.fillText('捏捏', playerX+10, PLAYER_FIXED_Y-8);
+    }
+
+    CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+        if (w < 2 * r) r = w / 2;
+        if (h < 2 * r) r = h / 2;
+        this.moveTo(x + r, y);
+        this.lineTo(x + w - r, y);
+        this.quadraticCurveTo(x + w, y, x + w, y + r);
+        this.lineTo(x + w, y + h - r);
+        this.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+        this.lineTo(x + r, y + h);
+        this.quadraticCurveTo(x, y + h, x, y + h - r);
+        this.lineTo(x, y + r);
+        this.quadraticCurveTo(x, y, x + r, y);
+        return this;
+    };
+
+    // 移动控制
+    function handleMove(clientX, clientY) {
+        if (!gameActive || gameEnded) return;
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = CW / rect.width;
+        let canvasX = (clientX - rect.left) * scaleX;
+        canvasX = Math.max(0, Math.min(canvasX, CW - PLAYER_WIDTH));
+        playerX = canvasX;
+    }
+
+    wrapper.addEventListener('mousemove', (e) => {
+        e.preventDefault();
+        handleMove(e.clientX, e.clientY);
+    });
+    wrapper.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        if (touch) handleMove(touch.clientX, touch.clientY);
+    }, { passive: false });
+    wrapper.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        if (touch) handleMove(touch.clientX, touch.clientY);
+    }, { passive: false });
+
+    // 按钮事件
+    startGameBtn.addEventListener('click', () => {
+        startModal.classList.add('hidden');
+        resetGame();
+    });
+
+    againBtn.addEventListener('click', () => {
+        endModal.classList.add('hidden');
+        resetGame();
+    });
+
+    restartBtn.addEventListener('click', () => {
+        startModal.classList.add('hidden');
+        endModal.classList.add('hidden');
+        resetGame();
+    });
+
+    // 图片加载失败不影响使用
+    for (let key in images) {
+        images[key].onerror = () => console.warn(`角色图片 ${key} 加载失败`);
+    }
+    [imgMaggot, imgFly, imgButterfly].forEach(img => {
+        img.onerror = () => console.warn('结局图片加载失败，将只显示文字');
+    });
+
+    // 初始显示开始界面
+    startModal.classList.remove('hidden');
+    endModal.classList.add('hidden');
+    gameActive = false;
+    gameEnded = false;
+    drawCanvas();
+})();
+</script>
+</body>
+</html>
