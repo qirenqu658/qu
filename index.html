@@ -44,8 +44,10 @@
             border: 2px solid #eba031;
             margin-bottom: 12px;
             box-shadow: inset 0 -3px 0 #0e2a33;
+            flex-wrap: wrap;
+            gap: 8px;
         }
-        .timer-box, .score-box {
+        .timer-box, .score-box, .maifu-box {
             background: #0f2a31;
             padding: 8px 18px;
             border-radius: 40px;
@@ -55,11 +57,11 @@
             gap: 6px;
             backdrop-filter: blur(2px);
         }
-        .timer-box span, .score-box span {
+        .timer-box span, .score-box span, .maifu-box span {
             color: #fee7a0;
             margin-right: 5px;
         }
-        #timer, #score {
+        #timer, #score, #maifu {
             color: #faf1c7;
             font-size: 1.6rem;
             line-height: 1;
@@ -68,6 +70,9 @@
         }
         #score {
             color: #d4ffb0;
+        }
+        #maifu {
+            color: #ffb3d9;
         }
         .canvas-wrapper {
             position: relative;
@@ -251,6 +256,7 @@
     <div class="score-panel">
         <div class="timer-box"><span>⏳</span><span id="timer">30</span></div>
         <div class="score-box"><span>🎯熟练</span><span id="score">0</span></div>
+        <div class="maifu-box"><span>💕麦麸</span><span id="maifu">0</span></div>
     </div>
     <div class="canvas-wrapper" id="canvasWrapper">
         <canvas id="gameCanvas" width="600" height="600"></canvas>
@@ -260,29 +266,31 @@
         <span id="morph-name">许哥是蛆</span>
     </div>
     <button class="btn-restart" id="restartBtn">🔄 重开蛆蝶局</button>
-    <div class="footer-tip">← 拖动/滑动 捏捏 →  |  赛训🟢 +5 练习🔵 +3 摸鱼🟠 -5 摆烂🔴 -10</div>
+    <div class="footer-tip">← 拖动/滑动 捏捏 →  |  赛训🟢 +5 练习🔵 +3 摸鱼🟠 -5 摆烂🔴 -10 麦麸💖 +1麦麸-1熟练</div>
 </div>
 
 <!-- 开始界面 -->
 <div id="startModal" class="modal-overlay">
     <div class="modal-content" style="background: #ffe5a3;">
         <div class="start-title">🐛 许哥变形记 🦋</div>
-        <div class="start-sub">操控「捏捏」接住训练成果<br>化蛆成蝶 or 原地开除？</div>
+        <div class="start-sub">操控「捏捏」接住训练成果<br>化蛆成蝶 or 原地开除？<br>💖 麦麸过多可能触发神秘结局</div>
         <div style="display: flex; flex-direction: column; align-items: center;">
             <button class="btn-start" id="startGameBtn">🔛 开始</button>
         </div>
-        <div style="margin-top: 20px; font-size: 1rem; color: #5a3e1b;">图片素材可替换 (蛆/苍蝇/蝴蝶结局)</div>
+        <div style="margin-top: 20px; font-size: 1rem; color: #5a3e1b;">图片素材可替换 (蛆/苍蝇/蝴蝶/蛆蛆家族/私奔)</div>
     </div>
 </div>
 
 <!-- 结局/公告弹窗 -->
 <div id="endModal" class="modal-overlay hidden">
     <div class="modal-content" style="padding: 20px 15px;">
-        <!-- 结局图片区域（仅分数结局显示） -->
+        <!-- 结局图片区域（动态显示对应结局图） -->
         <div class="ending-img-container" id="endingImgContainer">
             <img id="imgMaggot" class="ending-img hidden" src="images/xuge-maggot-end.png" alt="许哥是蛆结局">
             <img id="imgFly" class="ending-img hidden" src="images/xuge-fly-end.png" alt="许哥变苍蝇结局">
             <img id="imgButterfly" class="ending-img hidden" src="images/xuge-butterfly-end.png" alt="许哥化蛆成蝶结局">
+            <img id="imgFamily" class="ending-img hidden" src="images/蛆蛆家族.png" alt="蛆蛆家族结局">
+            <img id="imgElope" class="ending-img hidden" src="images/私奔.png" alt="私奔结局">
         </div>
         <!-- 负分结局专用标题（默认隐藏） -->
         <div id="endingTitle" class="ending-title hidden"></div>
@@ -302,20 +310,24 @@
         pupa: 'images/xuge-pupa.png',
         fly: 'images/xuge-fly.png',
         butterfly: 'images/xuge-butterfly.png',
-        // 结局图 (弹窗显示)
+        // 结局图
         endingMaggot: 'images/xuge-maggot-end.png',
         endingFly: 'images/xuge-fly-end.png',
-        endingButterfly: 'images/xuge-butterfly-end.png'
+        endingButterfly: 'images/xuge-butterfly-end.png',
+        endingFamily: 'images/蛆蛆家族.png',
+        endingElope: 'images/私奔.png'
     };
     // ====================================================
 
-    // 音频路径 (使用正斜杠)
+    // 音频路径
     const AUDIO_PATHS = {
         bgm: 'audio/bgm.mp3',
         good: 'audio/good.wav',
         bad: 'audio/bad.wav',
         goodEnd: 'audio/good-end.wav',
-        badEnd: 'audio/bad-end.wav'
+        badEnd: 'audio/bad-end.wav',
+        maifu: 'audio/maifu.wav',
+        hiddenEnd: 'audio/hidden-end.wav'
     };
 
     // 初始化音频对象
@@ -325,17 +337,22 @@
     const badSound = new Audio(AUDIO_PATHS.bad);
     const goodEndSound = new Audio(AUDIO_PATHS.goodEnd);
     const badEndSound = new Audio(AUDIO_PATHS.badEnd);
+    const maifuSound = new Audio(AUDIO_PATHS.maifu);
+    const hiddenEndSound = new Audio(AUDIO_PATHS.hiddenEnd);
 
-    // 辅助函数：播放音效（自动处理错误）
+    // 增强版播放函数：先暂停、重置，再播放
     function playSound(audio) {
+        audio.pause();
         audio.currentTime = 0;
-        audio.play().catch(e => console.log('音频播放失败（可能是未加载或浏览器限制）:', e));
+        audio.play().catch(e => console.log('音频播放失败:', e));
     }
 
-    // 停止背景音乐（用于切换）
-    function stopBGM() {
-        bgmAudio.pause();
-        bgmAudio.currentTime = 0;
+    // 停止所有音效（用于重置游戏）
+    function stopAllSounds() {
+        [bgmAudio, goodSound, badSound, goodEndSound, badEndSound, maifuSound, hiddenEndSound].forEach(audio => {
+            audio.pause();
+            audio.currentTime = 0;
+        });
     }
 
     const canvas = document.getElementById('gameCanvas');
@@ -343,6 +360,7 @@
     const wrapper = document.getElementById('canvasWrapper');
     const timerSpan = document.getElementById('timer');
     const scoreSpan = document.getElementById('score');
+    const maifuSpan = document.getElementById('maifu');
     const morphNameSpan = document.getElementById('morph-name');
     const restartBtn = document.getElementById('restartBtn');
     
@@ -353,6 +371,8 @@
     const imgMaggot = document.getElementById('imgMaggot');
     const imgFly = document.getElementById('imgFly');
     const imgButterfly = document.getElementById('imgButterfly');
+    const imgFamily = document.getElementById('imgFamily');
+    const imgElope = document.getElementById('imgElope');
     const endingMessage = document.getElementById('endingMessage');
     const endingTitle = document.getElementById('endingTitle');
     const endingImgContainer = document.getElementById('endingImgContainer');
@@ -370,17 +390,21 @@
     const DROP_WIDTH = 80;
     const DROP_HEIGHT = 42;
     const DROP_SPEED = 1.5;
+
+    // 掉落物类型：麦麸
     const DROP_TYPES = [
         { text: '赛训', color: '#2ecc71', score: 5 },
         { text: '练习', color: '#3498db', score: 3 },
         { text: '摸鱼', color: '#f39c12', score: -5 },
-        { text: '摆烂', color: '#e74c3c', score: -10 }
+        { text: '摆烂', color: '#e74c3c', score: -10 },
+        { text: '麦麸', color: '#ff69b4', score: -1, isMaifu: true }
     ];
 
     // 全局变量
     let playerX = (CW - PLAYER_WIDTH) / 2;
     let drops = [];
     let score = 0;
+    let maifuValue = 0;
     let timeLeft = 30;
     let gameActive = false;
     let gameEnded = false;
@@ -403,6 +427,8 @@
     imgMaggot.src = IMAGE_PATHS.endingMaggot;
     imgFly.src = IMAGE_PATHS.endingFly;
     imgButterfly.src = IMAGE_PATHS.endingButterfly;
+    imgFamily.src = IMAGE_PATHS.endingFamily;
+    imgElope.src = IMAGE_PATHS.endingElope;
 
     function getCurrentMorph() {
         if (score < 0) return 'maggot';
@@ -423,8 +449,53 @@
         morphNameSpan.innerText = names[morph] || '许哥是蛆';
     }
 
+    // 检查隐藏结局（麦麸值 ≥ 5）
+    function checkHiddenEnding() {
+        if (maifuValue >= 5 && gameActive && !gameEnded) {
+            gameActive = false;
+            gameEnded = true;
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = null;
+            stopAllSounds();
+            showHiddenEnding();
+            return true;
+        }
+        return false;
+    }
+
+    // 显示隐藏结局（蛆蛆家族）
+    function showHiddenEnding() {
+        endingTitle.classList.add('hidden');
+        endingImgContainer.classList.remove('hidden');
+        imgMaggot.classList.add('hidden');
+        imgFly.classList.add('hidden');
+        imgButterfly.classList.add('hidden');
+        imgElope.classList.add('hidden');
+        imgFamily.classList.remove('hidden');
+        endingMessage.innerHTML = '🐛 蛆蛆家族：许哥和马哥过上了幸福美好的生活，还有一堆蛆宝宝！';
+        playSound(hiddenEndSound);
+        endModal.classList.remove('hidden');
+    }
+
+    // 显示私奔结局（麦麸导致的负分）
+    function showElopeEnding() {
+        endingTitle.classList.add('hidden');
+        endingImgContainer.classList.remove('hidden');
+        imgMaggot.classList.add('hidden');
+        imgFly.classList.add('hidden');
+        imgButterfly.classList.add('hidden');
+        imgFamily.classList.add('hidden');
+        imgElope.classList.remove('hidden');
+        endingMessage.innerHTML = '💕 私奔结局：许哥和马哥抛下一切，私奔到月球！';
+        playSound(hiddenEndSound);
+        endModal.classList.remove('hidden');
+    }
+
     // 重置游戏
     function resetGame() {
+        // 停止所有音效
+        stopAllSounds();
+        
         if (timerInterval) clearInterval(timerInterval);
         if (animFrame) cancelAnimationFrame(animFrame);
         
@@ -432,18 +503,19 @@
         gameEnded = false;
         drops = [];
         score = 0;
+        maifuValue = 0;
         timeLeft = 30;
         playerX = (CW - PLAYER_WIDTH) / 2;
         
         updateScoreDisplay();
         timerSpan.innerText = timeLeft;
+        maifuSpan.innerText = maifuValue;
         updateMorphName();
         
         startModal.classList.add('hidden');
         endModal.classList.add('hidden');
         
         // 重新播放背景音乐
-        stopBGM();
         playSound(bgmAudio);
         
         timerInterval = setInterval(function() {
@@ -463,6 +535,7 @@
             if (gameActive) {
                 updateDrops();
                 checkCollisions();
+                checkHiddenEnding(); // 每帧检查
             }
             drawCanvas();
             animFrame = requestAnimationFrame(gameLoop);
@@ -470,23 +543,22 @@
         animFrame = requestAnimationFrame(gameLoop);
     }
 
-    // 显示结局弹窗（分数结局）
+    // 显示分数结局
     function showEndingByScore() {
         if (gameEnded && endModal.classList.contains('hidden') === false) return;
         
         gameActive = false;
         gameEnded = true;
+        stopAllSounds();
         
-        // 停止背景音乐
-        stopBGM();
-        
-        // 隐藏负分标题，显示图片容器
         endingTitle.classList.add('hidden');
         endingImgContainer.classList.remove('hidden');
         
         imgMaggot.classList.add('hidden');
         imgFly.classList.add('hidden');
         imgButterfly.classList.add('hidden');
+        imgFamily.classList.add('hidden');
+        imgElope.classList.add('hidden');
 
         let mainMsg = '';
         if (score >= 40) {
@@ -507,21 +579,17 @@
         endModal.classList.remove('hidden');
     }
 
-    // 开除许哥公告（负分触发）
+    // 开除公告（负分且麦麸值为0时触发）
     function showDissolveAnnounce() {
         if (gameEnded) return;
         gameActive = false;
         gameEnded = true;
         if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
-        
-        // 停止背景音乐
-        stopBGM();
+        stopAllSounds();
 
-        // 显示标题，隐藏图片容器
         endingTitle.classList.remove('hidden');
         endingImgContainer.classList.add('hidden');
         
-        // 完整公告文本（保留原始格式）
         const fullAnnouncement = `"WBG电子竞技俱乐部公告
 
 2026年3月13日晚，结束决赛赛事后，对于监管者许立(ID:WBG.nle)比赛中的反常表现，开启了违反赛事公平性行为的调查，并且向联盟通报该情况。
@@ -530,46 +598,61 @@
 
 我俱乐部始终坚守公平竞技底线，坚决抵制影响赛事公平性等一切违规行为，对内部违规行为从严从重处理。感谢粉丝、合作伙伴及社会各界的监督，俱乐部将以此为戒，坚守职业初心，打造合规、健康、正向的电竞团队。"`;
 
-        // 提取标题和正文（去掉第一行和多余引号）
         const lines = fullAnnouncement.split('\n');
-        const titleText = lines[0].replace(/"/g, ''); // "WBG电子竞技俱乐部公告" -> WBG电子竞技俱乐部公告
-        // 正文从第三行开始（跳过第一行和空行）
+        const titleText = lines[0].replace(/"/g, '');
         const bodyLines = lines.slice(2);
-        const bodyText = bodyLines.join('\n').replace(/"$/, ''); // 去掉末尾可能存在的引号
+        const bodyText = bodyLines.join('\n').replace(/"$/, '');
 
         endingTitle.innerText = titleText;
-        // 放入带滚动框的容器中
         endingMessage.innerHTML = `<div class="announcement-box">${bodyText.replace(/\n/g, '<br>')}</div>`;
 
-        // 播放坏结局音效
         playSound(badEndSound);
-
         endModal.classList.remove('hidden');
     }
 
     function updateScoreDisplay() {
         scoreSpan.innerText = score;
+        maifuSpan.innerText = maifuValue;
+        // 负分处理：如果有麦麸值则触发私奔结局，否则开除公告
         if (score < 0 && gameActive && !gameEnded) {
-            showDissolveAnnounce();
+            if (maifuValue > 0) {
+                gameActive = false;
+                gameEnded = true;
+                if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+                stopAllSounds();
+                showElopeEnding();
+            } else {
+                showDissolveAnnounce();
+            }
         }
         updateMorphName();
     }
 
-    function addScore(delta) {
+    function addScore(delta, isMaifu = false) {
         if (!gameActive || gameEnded) return;
-        score += delta;
-        // 播放得分/扣分音效
-        if (delta > 0) {
-            playSound(goodSound);
-        } else if (delta < 0) {
-            playSound(badSound);
+        if (isMaifu) {
+            maifuValue += 1;
+            playSound(maifuSound);
+        } else {
+            if (delta > 0) playSound(goodSound);
+            else if (delta < 0) playSound(badSound);
         }
+        score += delta;
         updateScoreDisplay();
+        checkHiddenEnding();
     }
 
     function updateDrops() {
+        // 生成概率 2.5%
         if (Math.random() < 0.025) {
-            const typeIdx = Math.floor(Math.random() * DROP_TYPES.length);
+            // 麦麸延迟出现：游戏开始5秒后才允许出现（剩余时间 ≤ 25）
+            let elapsed = 30 - timeLeft; // 已过去秒数
+            let typeIdx;
+            if (elapsed >= 5 && Math.random() < 0.1) { // 10%概率麦麸，且已过5秒
+                typeIdx = 4; // 麦麸
+            } else {
+                typeIdx = Math.floor(Math.random() * 4); // 0-3 其他
+            }
             const type = DROP_TYPES[typeIdx];
             const x = Math.random() * (CW - DROP_WIDTH);
             drops.push({
@@ -599,7 +682,7 @@
             const d = drops[i];
             const dropRect = { x: d.x, y: d.y, w: d.width, h: d.height };
             if (rectCollide(playerRect, dropRect)) {
-                addScore(d.type.score);
+                addScore(d.type.score, d.type.isMaifu === true);
                 drops.splice(i, 1);
             }
         }
@@ -614,6 +697,7 @@
 
     function drawCanvas() {
         ctx.clearRect(0, 0, CW, CH);
+        // 网格
         ctx.strokeStyle = '#327088';
         ctx.lineWidth = 0.5;
         for (let i = 0; i < CW; i += 40) {
@@ -631,6 +715,7 @@
             ctx.stroke();
         }
 
+        // 掉落物
         for (let d of drops) {
             ctx.fillStyle = d.type.color;
             ctx.shadowColor = 'rgba(0,0,0,0.5)';
@@ -650,6 +735,7 @@
             ctx.fillText(d.type.text, d.x + 10, d.y + 32);
         }
 
+        // 角色
         const morph = getCurrentMorph();
         let img = images[morph];
         if (img && img.complete && img.naturalWidth > 0) {
@@ -738,7 +824,7 @@
     for (let key in images) {
         images[key].onerror = () => console.warn(`角色图片 ${key} 加载失败`);
     }
-    [imgMaggot, imgFly, imgButterfly].forEach(img => {
+    [imgMaggot, imgFly, imgButterfly, imgFamily, imgElope].forEach(img => {
         img.onerror = () => console.warn('结局图片加载失败，将只显示文字');
     });
 
