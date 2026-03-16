@@ -167,8 +167,8 @@
         }
         .modal-content {
             background: #ffeac2;
-            max-width: 450px;
-            width: 90%;
+            max-width: 400px;
+            width: 85%;
             padding: 25px 20px;
             border-radius: 70px 20px 70px 20px;
             border: 5px solid #fb9c2e;
@@ -272,27 +272,17 @@
         }
         .chart-container {
             width: 100%;
-            height: 160px;
-            margin: 15px 0 5px;
-            background: #1d3e48;
+            height: 150px;
+            margin: 15px 0;
+            background: #203e49;
             border-radius: 16px;
-            padding: 5px;
-            position: relative;
+            padding: 10px;
         }
         #scoreChart {
             width: 100%;
             height: 100%;
             background: #1d3e48;
             border-radius: 8px;
-        }
-        .chart-comment {
-            font-size: 1.2rem;
-            color: #f1c40f;
-            background: #0f2a31;
-            padding: 8px 15px;
-            border-radius: 30px;
-            margin-top: 5px;
-            border: 1px solid #eba031;
         }
     </style>
 </head>
@@ -322,8 +312,7 @@
         <div style="display: flex; flex-direction: column; align-items: center;">
             <button class="btn-start" id="startGameBtn">🔛 开始</button>
         </div>
-        <div style="margin-top: 20px; font-size: 1rem; color: #5a3e1b;">图片素材可替换 (蛆/苍蝇/蝴蝶/蛆蛆家族/私奔/马哥送花)</div>
-    </div>
+        
 </div>
 
 <!-- 马哥送花确认弹窗 -->
@@ -354,10 +343,8 @@
         <div id="endingMessage" style="font-size: 1.8rem; font-weight: bold; margin: 10px 0; color: #1d4e5f;"></div>
         <!-- 折线图区域 -->
         <div class="chart-container">
-            <canvas id="scoreChart" width="400" height="140"></canvas>
+            <canvas id="scoreChart" width="400" height="130"></canvas>
         </div>
-        <!-- 评语区域 -->
-        <div id="chartComment" class="chart-comment"></div>
         <button class="btn-again" id="againBtn">🎮 再来一局</button>
         <small style="display: block; margin-top: 12px; color: #735e36;">点击按钮重新开始</small>
     </div>
@@ -392,28 +379,6 @@
         maifu: 'audio/maifu.wav',
         hiddenEnd: 'audio/hidden-end.wav'
     };
-
-    // 评语库
-    const COMMENT_LIBRARY = [
-        { pattern: 'up', text: '许哥高歌猛进！' },
-        { pattern: 'up', text: '训练效果显著，未来可期！' },
-        { pattern: 'up', text: '熟练度暴涨，捏捏要起飞！' },
-        { pattern: 'down', text: '许哥一泻千里...' },
-        { pattern: 'down', text: '状态低迷，急需调整' },
-        { pattern: 'down', text: '熟练度滑坡，麦麸警告' },
-        { pattern: 'flat', text: '许哥平稳发育' },
-        { pattern: 'flat', text: '波澜不惊，重在参与' },
-        { pattern: 'flat', text: '熟练度稳定如老狗' },
-        { pattern: 'wave', text: '许哥过山车体验' },
-        { pattern: 'wave', text: '大起大落，刺激！' },
-        { pattern: 'wave', text: '心电图般的训练' },
-        { pattern: 'maifu', text: '麦麸上头的男人' },
-        { pattern: 'maifu', text: '麦麸值超标，爱情使人盲目' },
-        { pattern: 'maifu', text: '捏捏沉迷麦麸无法自拔' },
-        { pattern: 'special', text: '开局猛如虎，结尾惨如蛆' },
-        { pattern: 'special', text: '低开高走，逆袭剧本' },
-        { pattern: 'special', text: '高开低走，经典拉胯' }
-    ];
 
     // 初始化音频对象
     const bgmAudio = new Audio(AUDIO_PATHS.bgm);
@@ -467,7 +432,6 @@
     const endingTitle = document.getElementById('endingTitle');
     const endingImgContainer = document.getElementById('endingImgContainer');
     const chartCanvas = document.getElementById('scoreChart');
-    const chartCommentDiv = document.getElementById('chartComment');
 
     // 设置图片src
     flowerImg.src = IMAGE_PATHS.flower;
@@ -512,6 +476,7 @@
 
     // 数据记录用于折线图
     let scoreHistory = [];          // 存储 { time: 剩余时间, score: 当前熟练度 }
+    let startTime = 30;              // 游戏开始时剩余时间
 
     // 麦麸拒绝状态
     let maifuRejected = false;       // 是否拒绝过麦麸结局
@@ -643,7 +608,7 @@
         imgFamily.classList.remove('hidden');
         endingMessage.innerHTML = '🐛 蛆蛆家族：许哥和马哥过上了幸福美好的生活，还有一堆蛆宝宝！';
         playSound(hiddenEndSound);
-        drawChartAndComment();
+        drawChart();
         endModal.classList.remove('hidden');
     }
 
@@ -658,7 +623,7 @@
         imgElope.classList.remove('hidden');
         endingMessage.innerHTML = '💕 私奔结局：许哥和马哥抛下一切，私奔到月球！';
         playSound(hiddenEndSound);
-        drawChartAndComment();
+        drawChart();
         endModal.classList.remove('hidden');
     }
 
@@ -670,7 +635,7 @@
         endingImgContainer.classList.add('hidden');
         const fullAnnouncement = `"WBG电子竞技俱乐部公告
 
-2026年3月13日晚，结束决赛赛事后，对于监管者许立(ID:WBG.nle)比赛中的反常表现，开启了违反赛事公平性行为的调查，并且向联盟通报该情况。
+结束赛事后，对于监管者许立(ID:WBG.nle)比赛中的反常表现，开启了违反赛事公平性行为的调查，并且向联盟通报该情况。
 
 通过俱乐部调查取证发现捏捏疑似存在严重违反俱乐部规章制度及职业操守、影响赛事公平性的不正当行为。俱乐部将目前已掌握的情况上报联盟，移交联盟纪律部门调查处理。联盟纪律团队已介入调查，我们将结合联盟调查结果对该事件进行严肃处理。
 
@@ -681,7 +646,7 @@
         const bodyText = bodyLines.join('\n').replace(/"$/, '');
         endingTitle.innerText = titleText;
         endingMessage.innerHTML = `<div class="announcement-box">${bodyText.replace(/\n/g, '<br>')}</div>`;
-        drawChartAndComment();
+        drawChart();
         endModal.classList.remove('hidden');
     }
 
@@ -722,7 +687,6 @@
             if (!gameActive || gameEnded) return;
             timeLeft -= 1;
             timerSpan.innerText = timeLeft >= 0 ? timeLeft : 0;
-            recordScore(); // 每秒记录一次
             if (timeLeft <= 0) {
                 gameActive = false;
                 gameEnded = true;
@@ -780,61 +744,19 @@
         }
 
         endingMessage.innerHTML = mainMsg;
-        drawChartAndComment();
+        drawChart();
         endModal.classList.remove('hidden');
     }
 
-    // 生成评语
-    function generateComment(history) {
-        if (history.length < 2) return "数据不足，无法评价";
-        const first = history[0].score;
-        const last = history[history.length-1].score;
-        const maxScore = Math.max(...history.map(p => p.score));
-        const minScore = Math.min(...history.map(p => p.score));
-        const range = maxScore - minScore;
-        
-        // 计算上升/下降趋势（最后5秒与初始比较）
-        const lastFive = history.slice(-5);
-        const firstFiveAvg = history.slice(0, Math.min(5, history.length)).reduce((sum, p) => sum + p.score, 0) / Math.min(5, history.length);
-        const lastFiveAvg = lastFive.reduce((sum, p) => sum + p.score, 0) / lastFive.length;
-        const trend = lastFiveAvg - firstFiveAvg;
-        
-        // 波动程度：计算标准差
-        const mean = history.reduce((sum, p) => sum + p.score, 0) / history.length;
-        const variance = history.reduce((sum, p) => sum + Math.pow(p.score - mean, 2), 0) / history.length;
-        const stdDev = Math.sqrt(variance);
-        
-        // 麦麸值影响
-        if (maifuValue >= 3) {
-            return COMMENT_LIBRARY.filter(c => c.pattern === 'maifu')[Math.floor(Math.random() * COMMENT_LIBRARY.filter(c => c.pattern === 'maifu').length)].text;
-        }
-        
-        // 判断趋势
-        if (trend > 5) {
-            return COMMENT_LIBRARY.filter(c => c.pattern === 'up')[Math.floor(Math.random() * COMMENT_LIBRARY.filter(c => c.pattern === 'up').length)].text;
-        } else if (trend < -5) {
-            return COMMENT_LIBRARY.filter(c => c.pattern === 'down')[Math.floor(Math.random() * COMMENT_LIBRARY.filter(c => c.pattern === 'down').length)].text;
-        } else if (stdDev > 10) {
-            return COMMENT_LIBRARY.filter(c => c.pattern === 'wave')[Math.floor(Math.random() * COMMENT_LIBRARY.filter(c => c.pattern === 'wave').length)].text;
-        } else if (range < 5) {
-            return COMMENT_LIBRARY.filter(c => c.pattern === 'flat')[Math.floor(Math.random() * COMMENT_LIBRARY.filter(c => c.pattern === 'flat').length)].text;
-        } else {
-            // 特殊情况：先高后低或先低后高
-            if (first > last + 10) return "高开低走，经典拉胯";
-            if (last > first + 10) return "低开高走，逆袭剧本";
-            return COMMENT_LIBRARY.filter(c => c.pattern === 'flat')[Math.floor(Math.random() * COMMENT_LIBRARY.filter(c => c.pattern === 'flat').length)].text;
-        }
-    }
-
-    // 绘制折线图并添加评语
-    function drawChartAndComment() {
+    // 绘制折线图
+    function drawChart() {
         const ctxChart = chartCanvas.getContext('2d');
         const w = chartCanvas.width, h = chartCanvas.height;
         ctxChart.clearRect(0, 0, w, h);
         
         if (scoreHistory.length < 2) return;
         
-        // 找出分数范围，并留边距
+        // 找出分数范围
         let minScore = Math.min(...scoreHistory.map(p => p.score));
         let maxScore = Math.max(...scoreHistory.map(p => p.score));
         // 确保最小值和最大值不相等
@@ -842,11 +764,6 @@
             maxScore += 1;
             minScore -= 1;
         }
-        // 给坐标轴留出边距
-        const margin = 25;
-        const graphW = w - 2 * margin;
-        const graphH = h - 2 * margin;
-        
         // 时间范围：30 -> 0
         const maxTime = 30;
         const minTime = 0;
@@ -854,45 +771,31 @@
         // 绘制背景网格
         ctxChart.strokeStyle = '#3a6b7e';
         ctxChart.lineWidth = 0.5;
-        ctxChart.fillStyle = '#1d3e48';
-        ctxChart.fillRect(0, 0, w, h);
-        
-        // 绘制坐标轴
-        ctxChart.beginPath();
-        ctxChart.strokeStyle = '#f1c40f';
-        ctxChart.lineWidth = 1;
-        // X轴
-        ctxChart.moveTo(margin, h - margin);
-        ctxChart.lineTo(w - margin, h - margin);
-        // Y轴
-        ctxChart.moveTo(margin, margin);
-        ctxChart.lineTo(margin, h - margin);
-        ctxChart.stroke();
-        
-        // 绘制刻度标签
-        ctxChart.font = '10px "Segoe UI", sans-serif';
-        ctxChart.fillStyle = '#f1c40f';
-        // X轴标签（时间）
-        for (let t = 0; t <= 30; t += 10) {
-            let x = margin + (maxTime - t) / (maxTime - minTime) * graphW;
-            ctxChart.fillText(t + 's', x - 10, h - margin + 15);
+        for (let i = 0; i <= 5; i++) {
+            let x = i * w / 5;
+            ctxChart.beginPath();
+            ctxChart.moveTo(x, 0);
+            ctxChart.lineTo(x, h);
+            ctxChart.strokeStyle = '#3a6b7e';
+            ctxChart.stroke();
         }
-        // Y轴标签（熟练度）
-        for (let s = Math.floor(minScore / 5) * 5; s <= maxScore + 5; s += 5) {
-            if (s < minScore - 2 || s > maxScore + 2) continue;
-            let y = h - margin - (s - minScore) / (maxScore - minScore) * graphH;
-            ctxChart.fillText(s, margin - 25, y + 5);
+        for (let i = 0; i <= 3; i++) {
+            let y = i * h / 3;
+            ctxChart.beginPath();
+            ctxChart.moveTo(0, y);
+            ctxChart.lineTo(w, y);
+            ctxChart.strokeStyle = '#3a6b7e';
+            ctxChart.stroke();
         }
         
-        // 映射函数
+        // 映射坐标
         function mapX(t) {
-            return margin + (maxTime - t) / (maxTime - minTime) * graphW;
+            return (maxTime - t) / (maxTime - minTime) * w; // 时间越少越靠右
         }
         function mapY(s) {
-            return h - margin - (s - minScore) / (maxScore - minScore) * graphH;
+            return h - (s - minScore) / (maxScore - minScore) * h;
         }
         
-        // 绘制折线
         ctxChart.beginPath();
         ctxChart.strokeStyle = '#f1c40f';
         ctxChart.lineWidth = 2;
@@ -907,27 +810,13 @@
         ctxChart.stroke();
         ctxChart.shadowBlur = 0;
         
-        // 绘制数据点
+        // 绘制点
         ctxChart.fillStyle = '#f39c12';
         points.forEach(p => {
             ctxChart.beginPath();
             ctxChart.arc(p.x, p.y, 3, 0, 2 * Math.PI);
             ctxChart.fill();
         });
-        
-        // 添加坐标轴文字
-        ctxChart.font = 'bold 12px "Segoe UI", sans-serif';
-        ctxChart.fillStyle = '#f1c40f';
-        ctxChart.fillText('时间 (秒)', w/2 - 30, h - 5);
-        ctxChart.save();
-        ctxChart.translate(10, h/2);
-        ctxChart.rotate(-Math.PI/2);
-        ctxChart.fillText('熟练度', -10, 0);
-        ctxChart.restore();
-        
-        // 生成评语
-        const comment = generateComment(scoreHistory);
-        chartCommentDiv.innerText = '📊 ' + comment;
     }
 
     function updateScoreDisplay() {
@@ -940,6 +829,7 @@
             // 如果有麦麸值，会通过checkMaifuEnding处理，这里不直接调用
             if (maifuValue > 0) {
                 // 暂停，由checkMaifuEnding负责
+                // 但为了避免重复，checkMaifuEnding每帧执行，此处不需额外处理
             } else {
                 // 无麦麸值，直接开除
                 showDissolveAnnounce();
@@ -958,7 +848,7 @@
             else if (delta < 0) playSound(badSound);
         }
         score += delta;
-        recordScore(); // 每次得分/扣分也记录
+        recordScore();
         updateScoreDisplay();
     }
 
