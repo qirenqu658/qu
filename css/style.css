@@ -12,15 +12,14 @@ html {
 }
 body {
     background: #0b1a2f;
-    min-height: 100vh;
     min-height: -webkit-fill-available;
+    min-height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
     font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
     padding: 8px;
     overscroll-behavior: none;
-    -webkit-overflow-scrolling: touch;
     touch-action: none;
 }
 .game-container {
@@ -59,6 +58,7 @@ body {
     display: flex;
     align-items: center;
     gap: 6px;
+    -webkit-backdrop-filter: blur(2px);
     backdrop-filter: blur(2px);
 }
 .timer-box span, .score-box span, .maifu-box span {
@@ -185,8 +185,8 @@ canvas {
     justify-content: center;
     align-items: center;
     z-index: 999;
-    backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
     transition: 0.2s;
     overscroll-behavior: contain;
     touch-action: none;
@@ -202,6 +202,13 @@ canvas {
     color: #1b4b5e;
     box-shadow: 0 15px 0 #a56118, 0 20px 30px black;
 }
+.modal-content-start {
+    background: #ffe5a3;
+}
+.modal-content-end {
+    padding: 20px 15px;
+    max-width: 450px;
+}
 .start-title {
     font-size: 2.8rem;
     font-weight: 900;
@@ -214,6 +221,15 @@ canvas {
     font-size: 1.2rem;
     margin: 20px 0 30px;
     color: #2f5e70;
+}
+.start-btn-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.flower-prompt {
+    font-size: 1.5rem;
+    margin: 10px 0;
 }
 .btn-start, .btn-again, .btn-choice {
     background: #fcb42e;
@@ -289,7 +305,17 @@ canvas {
     word-break: break-word;
     margin: 10px 0;
     touch-action: auto;
-    -webkit-overflow-scrolling: touch;
+}
+#endingMessage {
+    font-size: 1.8rem;
+    font-weight: bold;
+    margin: 10px 0;
+    color: #1d4e5f;
+}
+.end-modal-hint {
+    display: block;
+    margin-top: 12px;
+    color: #735e36;
 }
 .ending-title {
     font-size: 2rem;

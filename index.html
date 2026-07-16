@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>许哥变形记 · 化蛆成蝶</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
@@ -27,14 +27,14 @@
 
 <!-- 开始界面 -->
 <div id="startModal" class="modal-overlay">
-    <div class="modal-content" style="background: #ffe5a3;">
+    <div class="modal-content modal-content-start">
         <div class="start-title">🐛 许哥变形记 🦋</div>
         <div class="start-sub">
             操控「捏捏」接住训练成果<br>
             初始熟练度15<br>
             💖 麦麸过多可能触发神秘结局
         </div>
-        <div style="display: flex; flex-direction: column; align-items: center;">
+        <div class="start-btn-area">
             <button class="btn-start" id="startGameBtn">🔛 开始</button>
         </div>
     </div>
@@ -46,7 +46,7 @@
         <div class="ending-img-container">
             <img id="flowerImg" class="ending-img" src="images/mage_send_flower.png" alt="马哥送花">
         </div>
-        <div style="font-size: 1.5rem; margin: 10px 0;">马哥向你送花，是否接受？</div>
+        <div class="flower-prompt">马哥向你送花，是否接受？</div>
         <div class="choice-container">
             <button class="btn-choice" id="agreeBtn">💖 同意</button>
             <button class="btn-choice" id="disagreeBtn">💔 拒绝</button>
@@ -56,7 +56,7 @@
 
 <!-- 结局弹窗 -->
 <div id="endModal" class="modal-overlay hidden">
-    <div class="modal-content" style="padding: 20px 15px; max-width: 450px;">
+    <div class="modal-content modal-content-end">
         <div class="ending-img-container" id="endingImgContainer">
             <img id="imgMaggot" class="ending-img hidden" src="images/xuge-maggot-end.png" alt="许哥是蛆">
             <img id="imgFly" class="ending-img hidden" src="images/xuge-fly-end.png" alt="许哥变苍蝇">
@@ -65,12 +65,12 @@
             <img id="imgElope" class="ending-img hidden" src="images/私奔.png" alt="私奔">
         </div>
         <div id="endingTitle" class="ending-title hidden"></div>
-        <div id="endingMessage" style="font-size: 1.8rem; font-weight: bold; margin: 10px 0; color: #1d4e5f;"></div>
+        <div id="endingMessage"></div>
         <div class="chart-container">
             <canvas id="scoreChart" width="400" height="130"></canvas>
         </div>
         <button class="btn-again" id="againBtn">🎮 再来一局</button>
-        <small style="display: block; margin-top: 12px; color: #735e36;">点击按钮重新开始</small>
+        <small class="end-modal-hint">点击按钮重新开始</small>
     </div>
 </div>
 
